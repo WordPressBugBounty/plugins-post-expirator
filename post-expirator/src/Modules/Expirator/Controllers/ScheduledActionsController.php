@@ -103,13 +103,6 @@ class ScheduledActionsController implements InitializableInterface
             10,
             3
         );
-
-        $this->hooks->addFilter(
-            CoreHooksAbstract::FILTER_ADMIN_TITLE,
-            [$this, 'onFilterAdminTitle'],
-            10,
-            2
-        );
     }
 
     public function onAdminMenu()
@@ -329,14 +322,5 @@ class ScheduledActionsController implements InitializableInterface
         }
 
         return $html;
-    }
-
-    public function onFilterAdminTitle($adminTitle, $title)
-    {
-        if (isset($_GET['page']) && $_GET['page'] === 'publishpress-future-scheduled-actions') {
-            return str_replace($title, __('Scheduled Actions', 'post-expirator'), $adminTitle);
-        }
-
-        return $adminTitle;
     }
 }

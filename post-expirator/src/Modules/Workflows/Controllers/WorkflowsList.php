@@ -403,10 +403,6 @@ class WorkflowsList implements InitializableInterface
 
     public function fixWorkflowEditorPageTitle()
     {
-        if (!isset($_GET['page']) || 'future_workflow_editor' !== $_GET['page']) {
-            return;
-        }
-
         global $title;
 
         $title = __("Action Workflow Editor", "post-expirator");

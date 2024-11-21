@@ -202,7 +202,7 @@ class ManualPostTrigger implements InitializableInterface
             global $post;
 
             if (! $post || is_null($post->ID)) {
-                $this->logger->error('Post is null or ID is not set, cannot enqueue block editor scripts.');
+                error_log('Post is null or ID is not set, cannot enqueue block editor scripts.');
                 return;
             }
 
@@ -299,7 +299,7 @@ class ManualPostTrigger implements InitializableInterface
                             return true;
                         },
                         'schema' => [
-                            'description' => __('Workflow Manual Trigger', 'post-expirator'),
+                            'description' => 'Workflow Manual Trigger',
                             'type' => 'object',
                         ]
                     ]

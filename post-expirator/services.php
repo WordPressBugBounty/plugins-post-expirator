@@ -389,9 +389,7 @@ return [
             $container->get(ServicesAbstract::DB_TABLE_ACTION_ARGS_SCHEMA),
             $container->get(ServicesAbstract::SETTINGS),
             $container->get(ServicesAbstract::LOGGER),
-            $container->get(ServicesAbstract::DATE_TIME_HANDLER),
-            $container->get(ServicesAbstract::POST_TYPE_DEFAULT_DATA_MODEL_FACTORY),
-            $container->get(ServicesAbstract::TAXONOMIES_MODEL_FACTORY)
+            $container->get(ServicesAbstract::DATE_TIME_HANDLER)
         );
     },
 
@@ -486,10 +484,8 @@ return [
          * @return TaxonomiesModel
          * @throws
          */
-        return static function () use ($container) {
-            return new TaxonomiesModel(
-                $container->get(ServicesAbstract::LOGGER)
-            );
+        return static function () {
+            return new TaxonomiesModel();
         };
     },
 

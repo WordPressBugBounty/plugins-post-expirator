@@ -49,11 +49,6 @@ class RestAPIController implements InitializableInterface
     private $dateTimeHandler;
 
     /**
-     * @var \Closure
-     */
-    private $taxonomiesModelFactory;
-
-    /**
      * @param HookableInterface $hooksFacade
      * @param callable $expirablePostModelFactory
      */
@@ -62,15 +57,13 @@ class RestAPIController implements InitializableInterface
         $expirablePostModelFactory,
         \Closure $currentUserModelFactory,
         LoggerInterface $logger,
-        DateTimeHandlerInterface $dateTimeHandler,
-        \Closure $taxonomiesModelFactory
+        DateTimeHandlerInterface $dateTimeHandler
     ) {
         $this->hooks = $hooksFacade;
         $this->expirablePostModelFactory = $expirablePostModelFactory;
         $this->currentUserModel = $currentUserModelFactory();
         $this->logger = $logger;
         $this->dateTimeHandler = $dateTimeHandler;
-        $this->taxonomiesModelFactory = $taxonomiesModelFactory;
     }
 
     public function initialize()
@@ -330,8 +323,7 @@ class RestAPIController implements InitializableInterface
                                 'categoryTaxonomy' => sanitize_text_field($value['taxonomy']),
                             ];
 
-                            $modelFactory = $this->taxonomiesModelFactory;
-                            $taxonomiesModel = $modelFactory();
+                            $taxonomiesModel = new TaxonomiesModel();
                             $opts['category'] = $taxonomiesModel->normalizeTermsCreatingIfNecessary(
                                 $opts['categoryTaxonomy'],
                                 $opts['category']
