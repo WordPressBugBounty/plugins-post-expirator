@@ -144,7 +144,7 @@ class QuickEditController implements InitializableInterface
             $currentUserModelFactory = Container::getInstance()->get(ServicesAbstract::CURRENT_USER_MODEL_FACTORY);
             $currentUserModel = $currentUserModelFactory();
 
-            if (! $currentUserModel->userCanExpirePosts()) {
+            if (! $currentUserModel->userCanExpirePosts() || ! $currentUserModel->userCanEditPost($postId)) {
                 return;
             }
 
@@ -339,6 +339,7 @@ class QuickEditController implements InitializableInterface
                     'nonce' => $nonce,
                     'hideCalendarByDefault' => $settingsFacade->getHideCalendarByDefault(),
                     'hiddenFields' => $hiddenFields,
+                    'wpTimezone' => wp_timezone_string(),
                     'strings' => [
                         'category' => __('Categories', 'post-expirator'),
                         'panelTitle' => $metaboxTitle,

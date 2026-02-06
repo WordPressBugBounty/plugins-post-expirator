@@ -20,6 +20,7 @@ use PublishPress\Future\Framework\Database\DBTableSchemaHandler;
 use PublishPress\Future\Framework\Logger\DBTableSchemas\DebugLogSchema;
 use PublishPress\Future\Framework\Logger\Logger;
 use PublishPress\Future\Framework\System\DateTimeHandler;
+use PublishPress\Future\Framework\WordPress\Utils;
 use PublishPress\Future\Framework\WordPress\Facade\DatabaseFacade;
 use PublishPress\Future\Framework\WordPress\Facade\DateTimeFacade;
 use PublishPress\Future\Framework\WordPress\Facade\EmailFacade;
@@ -112,6 +113,7 @@ use PublishPress\Future\Modules\Workflows\Domain\Steps\Triggers\Runners\OnPostUp
 use PublishPress\Future\Modules\Workflows\Domain\Steps\Triggers\Runners\OnPostWorkflowEnableRunner;
 use PublishPress\Future\Modules\Workflows\Domain\Steps\Triggers\Runners\OnScheduleRunner;
 use PublishPress\Future\Modules\Workflows\Domain\Steps\Triggers\Runners\OnUserRoleChangeRunner;
+use PublishPress\Future\Modules\Workflows\Domain\Steps\Triggers\Runners\OnTermsAddedRunner;
 use PublishPress\Future\Modules\Workflows\HooksAbstract as WorkflowsHooksAbstract;
 use PublishPress\Future\Modules\Workflows\Infrastructure\Safety\WorkflowExecutionSafeguard;
 use PublishPress\Future\Modules\Workflows\Interfaces\AsyncStepProcessorInterface;
@@ -381,11 +383,11 @@ return [
      */
     ServicesAbstract::MODULE_WOOCOMMERCE => static function (ContainerInterface $container) {
         return new ModuleWooCommerce(
+            $container->get(ServicesAbstract::HOOKS),
             $container->get(ServicesAbstract::BASE_URL),
             $container->get(ServicesAbstract::PLUGIN_VERSION)
         );
     },
-
     /**
      * @return ModuleInterface
      */
@@ -443,7 +445,8 @@ return [
             $container->get(ServicesAbstract::HOOKS),
             $container->get(ServicesAbstract::PLUGIN_VERSION),
             $container->get(ServicesAbstract::SETTINGS),
-            $container->get(ServicesAbstract::LOGGER)
+            $container->get(ServicesAbstract::LOGGER),
+            $container->get(ServicesAbstract::WORKFLOW_SANITIZATION_UTIL)
         );
     },
 
@@ -764,7 +767,8 @@ return [
 
     ServicesAbstract::WORKFLOWS_REST_API_MANAGER => static function (ContainerInterface $container) {
         return new RestApiManager(
-            $container->get(ServicesAbstract::HOOKS)
+            $container->get(ServicesAbstract::HOOKS),
+            $container->get(ServicesAbstract::WORKFLOW_SANITIZATION_UTIL)
         );
     },
 
@@ -954,9 +958,20 @@ return [
                     break;
 
                 case OnPostPublishRunner::getNodeTypeName():
+                    $inputValidatorPostQuery = call_user_func(
+                        $container->get(ServicesAbstract::INPUT_VALIDATOR_POST_QUERY_FACTORY),
+                        $workflowExecutionId
+                    );
+
                     $stepRunner = new OnPostPublishRunner(
+                        $hooks,
                         $generalStepProcessor,
-                        $logger
+                        $inputValidatorPostQuery,
+                        $executionContext,
+                        $logger,
+                        $container->get(ServicesAbstract::EXPIRABLE_POST_MODEL_FACTORY),
+                        $container->get(ServicesAbstract::POST_CACHE),
+                        $container->get(ServicesAbstract::WORKFLOW_EXECUTION_SAFEGUARD)
                     );
                     break;
 
@@ -972,6 +987,24 @@ return [
                         $generalStepProcessor,
                         $logger
                     );
+                    break;
+
+                case OnTermsAddedRunner::getNodeTypeName():
+                        $inputValidatorPostQuery = call_user_func(
+                            $container->get(ServicesAbstract::INPUT_VALIDATOR_POST_QUERY_FACTORY),
+                            $workflowExecutionId
+                        );
+
+                        $stepRunner = new OnTermsAddedRunner(
+                            $container->get(ServicesAbstract::HOOKS),
+                            $generalStepProcessor,
+                            $inputValidatorPostQuery,
+                            $logger,
+                            $container->get(ServicesAbstract::EXPIRABLE_POST_MODEL_FACTORY),
+                            $container->get(ServicesAbstract::POST_CACHE),
+                            $container->get(ServicesAbstract::WORKFLOW_EXECUTION_SAFEGUARD),
+                            $executionContext
+                        );
                     break;
 
                 case OnPostWorkflowEnableRunner::getNodeTypeName():
@@ -1145,7 +1178,9 @@ return [
                     );
 
                     $stepRunner = new ChangePostStatusRunner(
+                        $hooks,
                         $postStepProcessor,
+                        $container->get(ServicesAbstract::EXPIRABLE_POST_MODEL_FACTORY),
                         $logger
                     );
                     break;
@@ -1153,6 +1188,8 @@ return [
                 case SendEmailRunner::getNodeTypeName():
                     $stepRunner = new SendEmailRunner(
                         $generalStepProcessor,
+                        $container->get(ServicesAbstract::EMAIL),
+                        $executionContext,
                         $logger
                     );
                     break;
@@ -1341,5 +1378,9 @@ return [
         }
 
         return $workflowExecutionSafeguard;
+    },
+
+    ServicesAbstract::WORKFLOW_SANITIZATION_UTIL => static function (ContainerInterface $container) {
+        return new Utils\WorkflowSanitizationUtil();
     },
 ];

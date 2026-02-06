@@ -209,6 +209,7 @@ class BulkEditController implements InitializableInterface
                 'nonce' => $nonce,
                 'hideCalendarByDefault' => $settingsFacade->getHideCalendarByDefault(),
                 'hiddenFields' => $hiddenFields,
+                'wpTimezone' => wp_timezone_string(),
                 'strings' => [
                     'category' => __('Categories', 'post-expirator'),
                     'panelTitle' => $metaboxTitle,
@@ -442,6 +443,10 @@ class BulkEditController implements InitializableInterface
 
         foreach ($postIds as $postId) {
             $postId = (int)$postId;
+
+            if (! $this->currentUserModel->userCanEditPost($postId)) {
+                continue;
+            }
 
             $postModel = $postModelFactory($postId);
 

@@ -165,6 +165,7 @@ __webpack_require__.r(__webpack_exports__);
 var _futureWorkflows = futureWorkflows,
   apiUrl = _futureWorkflows.apiUrl,
   nonce = _futureWorkflows.nonce,
+  workflowNonce = _futureWorkflows.workflowNonce,
   workflows = _futureWorkflows.workflows;
 var Fields = function Fields(_ref) {
   var storeName = _ref.storeName;
@@ -184,12 +185,14 @@ var Fields = function Fields(_ref) {
       return {
         action: select(storeName).getAction(),
         workflowId: select(storeName).getExtraDataByName('workflowId') || defaultWorkflow,
-        postId: postId
+        postId: postId,
+        currentStoreWorkflowId: select(storeName).getExtraDataByName('workflowId')
       };
     }),
     action = _useSelect.action,
     workflowId = _useSelect.workflowId,
-    postId = _useSelect.postId;
+    postId = _useSelect.postId,
+    currentStoreWorkflowId = _useSelect.currentStoreWorkflowId;
   var _dispatch = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_2__.dispatch)(storeName),
     setExtraDataByName = _dispatch.setExtraDataByName;
   var handleActionChange = function handleActionChange(value) {
@@ -201,7 +204,8 @@ var Fields = function Fields(_ref) {
         wp.apiFetch({
           url: "".concat(apiUrl, "/post-expiration/").concat(postId),
           headers: {
-            'X-WP-Nonce': nonce
+            'X-WP-Nonce': nonce,
+            'X-PP-Workflow-Nonce': workflowNonce
           }
         }).then(function (data) {
           setExtraDataByName('workflowId', data.extraData.workflowId);
@@ -211,6 +215,9 @@ var Fields = function Fields(_ref) {
       }
     }
   }, []);
+  if (workflowId && workflowId !== currentStoreWorkflowId) {
+    setExtraDataByName('workflowId', workflowId);
+  }
   return /*#__PURE__*/React.createElement(React.Fragment, null, workflows.length > 0 && action === 'trigger-workflow' && /*#__PURE__*/React.createElement(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.PanelRow, {
     className: "future-action-panel-content future-action-full-width"
   }, /*#__PURE__*/React.createElement(_wordpress_components__WEBPACK_IMPORTED_MODULE_0__.SelectControl, {

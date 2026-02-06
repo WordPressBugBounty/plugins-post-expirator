@@ -11,6 +11,7 @@ use PublishPress\Future\Modules\Workflows\Domain\Engine\VariableResolvers\Future
 use PublishPress\Future\Modules\Workflows\Domain\Engine\VariableResolvers\IntegerResolver;
 use PublishPress\Future\Modules\Workflows\Domain\Engine\VariableResolvers\NodeResolver;
 use PublishPress\Future\Modules\Workflows\Domain\Engine\VariableResolvers\PostResolver;
+use PublishPress\Future\Modules\Workflows\Domain\Engine\VariableResolvers\PostTermsResolver;
 use PublishPress\Future\Modules\Workflows\Domain\Engine\VariableResolvers\SiteResolver;
 use PublishPress\Future\Modules\Workflows\Domain\Engine\VariableResolvers\UserResolver;
 use PublishPress\Future\Modules\Workflows\Domain\Engine\VariableResolvers\WorkflowResolver;
@@ -102,18 +103,31 @@ class ExecutionContext implements ExecutionContextInterface
         $expressions = $this->extractExpressionsFromText($text);
 
         foreach ($expressions as $expression) {
-            if ($expressionElements = $this->variableHasHelper($expression)) {
+            // Trim the expression to handle any whitespace issues
+            $expression = trim($expression);
+
+            if ($expressionElements = $this->parseHelperFromVariable($expression)) {
                 $value = $this->getVariable($expressionElements['variable']);
                 $value = $this->processorRegistry->process($expressionElements['helper'], $value, $expressionElements['args']);
             } else {
                 $value = $this->getVariable($expression);
             }
 
+            // Convert null to empty string for text replacement
+            if ($value === null) {
+                $value = '';
+            }
+
             if (is_array($value) || is_object($value)) {
                 $value = wp_json_encode($value);
             }
 
-            $text = str_replace('{{' . $expression . '}}', $value, $text);
+            // Ensure value is a string for str_replace
+            $value = (string)$value;
+
+            // Use preg_replace for more reliable replacement, escaping special regex characters
+            $pattern = '/\{\{' . preg_quote($expression, '/') . '\}\}/';
+            $text = preg_replace($pattern, $value, $text);
         }
 
         return $text;
@@ -157,19 +171,49 @@ class ExecutionContext implements ExecutionContextInterface
         $newExpression = [];
 
         foreach ($jsonLogicExpression as $key => $value) {
-            if (is_array($value)) {
-                if (isset($value['var'])) {
-                    $value = $value['var'];
-                } else {
-                    $value = $this->resolveExpressionsInJsonLogic($value);
-                    if (is_bool($value)) {
-                        $value = $value ? '1' : '0';
+            // If it's a {"var": "..."} node, try to resolve it to a real value
+            if (is_array($value) && array_key_exists('var', $value)) {
+                $originalVar = '{{' . trim($value['var'], '{}') . '}}';
+
+                $resolvedText = $this->resolveExpressionsInText($originalVar);
+
+                // Convert the resolved text back to appropriate type
+                // If it's JSON-encoded (arrays/objects), decode it
+                if (is_string($resolvedText) && (strpos($resolvedText, '[') === 0 || strpos($resolvedText, '{') === 0)) {
+                    $decoded = json_decode($resolvedText, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $resolved = $decoded;
+                    } else {
+                        $resolved = $resolvedText;
                     }
+                } elseif (is_numeric($resolvedText)) {
+                    // Preserve numeric types (e.g., timestamps from date helper with output="U")
+                    $resolved = strpos($resolvedText, '.') !== false ? (float)$resolvedText : (int)$resolvedText;
+                } else {
+                    $resolved = $resolvedText;
                 }
+
+                // Handle empty string as null for isEmpty/isNotEmpty operations
+                if ($resolved === '') {
+                    $resolved = null;
+                }
+
+                if ($resolved instanceof VariableResolverInterface) {
+                    $resolved = $resolved->getValue();
+                }
+
+                $newExpression[$key] = $resolved;
+                continue;
+            }
+
+            if (is_array($value)) {
+                $newExpression[$key] = $this->resolveExpressionsInJsonLogic($value);
+                continue;
             }
 
             if (is_string($value) && strpos($value, '{{') !== false) {
-                $value = $this->resolveExpressionsInText($value);
+                $newExpression[$key] = $this->resolveExpressionsInText($value);
+                continue;
             }
 
             $newExpression[$key] = $value;
@@ -178,8 +222,17 @@ class ExecutionContext implements ExecutionContextInterface
         return $newExpression;
     }
 
-    private function variableHasHelper(string $variableName)
+    /**
+     * Parse the helper from the variable name
+     *
+     * @param string $variableName
+     * @return array|false
+     * @since 4.9.4
+     */
+    private function parseHelperFromVariable(string $variableName)
     {
+        $variableName = trim($variableName, '{}');
+
         $helperRegex = '/^([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_\.]+)\s*(.*)$/';
 
         $matches = [];
@@ -488,6 +541,7 @@ class ExecutionContext implements ExecutionContextInterface
                     'integer' => IntegerResolver::class,
                     'node' => NodeResolver::class,
                     'post' => PostResolver::class,
+                    'terms' => TermsResolver::class,
                     'site' => SiteResolver::class,
                     'user' => UserResolver::class,
                     'workflow' => WorkflowResolver::class,
