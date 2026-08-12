@@ -292,7 +292,7 @@ class RestAPIController implements InitializableInterface
                                 $extraData = $extraData['extraData'];
                             }
                             if (! is_array($extraData) || ! isset($extraData['workflowId'])) {
-                                $extraData = new \stdClass();
+                                $extraData = [];
                             }
 
                             if (empty($date)) {

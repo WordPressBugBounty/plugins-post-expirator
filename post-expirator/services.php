@@ -1413,9 +1413,15 @@ return [
         );
     },
     ServicesAbstract::WORKFLOW_EXECUTION_SAFEGUARD => static function (ContainerInterface $container) {
-        return new WorkflowExecutionSafeguard(
-            $container->get(ServicesAbstract::HOOKS)
-        );
+        global $workflowExecutionSafeguard;
+
+        if (! isset($workflowExecutionSafeguard)) {
+            $workflowExecutionSafeguard = new WorkflowExecutionSafeguard(
+                $container->get(ServicesAbstract::HOOKS)
+            );
+        }
+
+        return $workflowExecutionSafeguard;
     },
 
     ServicesAbstract::WORKFLOW_SANITIZATION_UTIL => static function (ContainerInterface $container) {
