@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => '__root__',
-        'pretty_version' => '4.10.7',
-        'version' => '4.10.7.0',
-        'reference' => '6cfcab67af64371c7960c489b2b68fe554abd7fb',
+        'pretty_version' => '4.11.0',
+        'version' => '4.11.0.0',
+        'reference' => 'fdcf4edd7d973bc4d65411780ddc54be33c243af',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         '__root__' => array(
-            'pretty_version' => '4.10.7',
-            'version' => '4.10.7.0',
-            'reference' => '6cfcab67af64371c7960c489b2b68fe554abd7fb',
+            'pretty_version' => '4.11.0',
+            'version' => '4.11.0.0',
+            'reference' => 'fdcf4edd7d973bc4d65411780ddc54be33c243af',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => false,
         ),
         'publishpress/bundled-translations' => array(
-            'pretty_version' => 'v1.0.3',
-            'version' => '1.0.3.0',
-            'reference' => '95b06baed793a3a4ec44c5d932b68785302a0559',
+            'pretty_version' => 'v1.0.4',
+            'version' => '1.0.4.0',
+            'reference' => '6ed5c14e3ef23fb1c56691164e5a012ce559c153',
             'type' => 'library',
             'install_path' => __DIR__ . '/../publishpress/bundled-translations',
             'aliases' => array(),
@@ -92,9 +92,9 @@
             'dev_requirement' => false,
         ),
         'woocommerce/action-scheduler' => array(
-            'pretty_version' => '3.9.3',
-            'version' => '3.9.3.0',
-            'reference' => 'c58cdbab17651303d406cd3b22cf9d75c71c986c',
+            'pretty_version' => '4.1.0',
+            'version' => '4.1.0.0',
+            'reference' => '40a3df93a251590c58717b91b1049a13410e2ac4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../woocommerce/action-scheduler',
             'aliases' => array(),
